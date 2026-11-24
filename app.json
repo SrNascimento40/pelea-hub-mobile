@@ -3,9 +3,11 @@
     "name": "pelea-hub-mobile",
     "slug": "pelea-hub-mobile",
     "version": "1.0.0",
+    "scheme": "peleahub",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -20,6 +22,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-splash-screen",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": false
     }
   }
 }
