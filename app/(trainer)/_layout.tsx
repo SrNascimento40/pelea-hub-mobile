@@ -28,6 +28,10 @@ export default function TrainerLayout() {
         name="ranking"
         options={{ title: 'Ranking', tabBarIcon: ({ color, size }) => <Ionicons name="trophy" size={size} color={color} /> }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: 'Perfil', tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} /> }}
+      />
       <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );

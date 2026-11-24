@@ -1,8 +1,17 @@
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, usePathname } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, fontSize, spacing } from '@/constants/theme';
+import { LogoutScreen } from '@/screens/auth/LogoutScreen';
 
 export default function NotFoundScreen() {
+  const pathname = usePathname();
+
+  // As rotas do Expo Router diferenciam maiúsculas; /Logout, /LOGOUT etc.
+  // caem aqui e devem se comportar como /logout.
+  if (pathname.replace(/\/+$/, '').toLowerCase() === '/logout') {
+    return <LogoutScreen />;
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: 'Não encontrado' }} />

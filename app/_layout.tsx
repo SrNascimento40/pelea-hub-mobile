@@ -36,6 +36,7 @@ function RootNavigator() {
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen name="logout" />
       <Stack.Protected guard={!user}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>

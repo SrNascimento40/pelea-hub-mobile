@@ -155,6 +155,8 @@ export function StudentProfileScreen() {
           <Text style={styles.metricMeta}>Sem avaliações registradas ainda</Text>
         )}
       </Card>
+
+      <Button label="Sair da conta" variant="secondary" onPress={() => logout()} fullWidth style={styles.logout} />
     </Screen>
   );
 }
@@ -234,5 +236,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     marginTop: spacing.sm,
     fontStyle: 'italic',
+  },
+  logout: {
+    marginTop: spacing.lg,
   },
 });
