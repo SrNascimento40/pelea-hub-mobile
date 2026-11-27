@@ -41,7 +41,7 @@ export function TrainersScreen() {
               key={trainer.id}
               leading={<Avatar name={trainer.fullName} />}
               title={trainer.fullName}
-              subtitle={trainer.email}
+              subtitle={trainer.modalities.length > 0 ? `${trainer.modalities.join(', ')} · ${trainer.email}` : trainer.email}
               trailing={
                 <Ionicons name="trash-outline" size={20} color={colors.danger} onPress={() => setToRemove(trainer)} />
               }

@@ -25,7 +25,7 @@ export interface CreateStudentInput {
   fullName: string;
   email: string;
   phone: string;
-  birthDate: string;
+  birthDate: string | null;
   address: string;
   observations: string;
   password: string;

@@ -15,6 +15,7 @@ export interface CreateFeeInput {
   amount: number;
   dueDate: string;
   referenceMonth: string;
+  recurring: boolean;
 }
 
 export async function createFee(_actingUser: User, studentId: string, input: CreateFeeInput): Promise<MonthlyFee> {

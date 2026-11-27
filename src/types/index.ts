@@ -31,6 +31,8 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   createdAt: string;
+  birthDate: string | null;
+  modalities: string[];
 }
 
 export interface Student {
@@ -41,7 +43,7 @@ export interface Student {
   email: string;
   phone: string;
   photoUrl: string | null;
-  birthDate: string;
+  birthDate: string | null;
   address: string;
   observations: string;
   enrollmentDate: string;
@@ -58,6 +60,7 @@ export interface MonthlyFee {
   dueDate: string;
   referenceMonth: string;
   status: FeeStatus;
+  recurring: boolean;
   paidAt: string | null;
   paidBy: string | null;
   notes: string;

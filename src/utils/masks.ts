@@ -25,15 +25,15 @@ export function maskPhone(text: string): string {
 
 /**
  * DD/MM/AAAA → ISO em meia-noite UTC (o dia não "volta" um por causa de fuso).
- * Retorna null se a data estiver incompleta, não existir ou estiver no futuro.
+ * Retorna null se a data estiver incompleta, não existir ou — salvo allowFuture — estiver no futuro.
  */
-export function parseBrDate(text: string): string | null {
+export function parseBrDate(text: string, { allowFuture = false } = {}): string | null {
   const match = text.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (!match) return null;
   const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
   const date = new Date(Date.UTC(year, month - 1, day));
   const isRealDate = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-  if (!isRealDate || year < 1900 || date.getTime() > Date.now()) return null;
+  if (!isRealDate || year < 1900 || (!allowFuture && date.getTime() > Date.now())) return null;
   return date.toISOString();
 }
 

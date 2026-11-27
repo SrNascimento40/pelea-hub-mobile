@@ -23,6 +23,8 @@ export interface CreateTrainerInput {
   email: string;
   phone: string;
   password: string;
+  birthDate: string | null;
+  modalities: string[];
 }
 
 export async function addTrainer(_actingUser: User, input: CreateTrainerInput): Promise<User> {

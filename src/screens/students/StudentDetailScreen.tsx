@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
@@ -24,6 +24,7 @@ import { useAdjustRankingPoints, useStudentRanking } from '@/hooks/useRanking';
 import { useSetStudentStatus, useStudent } from '@/hooks/useStudents';
 import { MonthlyFee } from '@/types';
 import { age, formatDate, formatDateTime } from '@/utils/format';
+import { maskDate, parseBrDate } from '@/utils/masks';
 import { permissions } from '@/utils/permissions';
 
 type TabKey = 'info' | 'finance' | 'attendance' | 'ranking' | 'profile';
@@ -88,7 +89,7 @@ function InfoTab({ studentId }: { studentId: string }) {
       <Card>
         <InfoRow icon="mail-outline" label="Email" value={student.email} />
         <InfoRow icon="call-outline" label="Telefone" value={student.phone} />
-        <InfoRow icon="calendar-outline" label="Nascimento" value={`${formatDate(student.birthDate)} · ${age(student.birthDate)} anos`} />
+        <InfoRow icon="calendar-outline" label="Nascimento" value={student.birthDate ? `${formatDate(student.birthDate)} · ${age(student.birthDate)} anos` : 'Não informado'} />
         <InfoRow icon="location-outline" label="Endereço" value={student.address || '—'} />
         <InfoRow icon="ribbon-outline" label="Matrícula" value={formatDate(student.enrollmentDate)} last />
       </Card>
@@ -149,18 +150,40 @@ function FinanceTab({ studentId, studentName }: { studentId: string; studentName
   const [showCreate, setShowCreate] = useState(false);
   const [amount, setAmount] = useState('150');
   const [dueDate, setDueDate] = useState('');
-  const [referenceMonth, setReferenceMonth] = useState('');
+  const [recurring, setRecurring] = useState(true);
+  const [feeError, setFeeError] = useState('');
   const createFee = useCreateFee(studentId);
 
   if (!user) return null;
 
-  async function handleCreate() {
-    const value = Number(amount.replace(',', '.'));
-    if (!value || !dueDate || !referenceMonth) return;
-    await createFee.mutateAsync({ amount: value, dueDate: new Date(dueDate).toISOString(), referenceMonth });
+  const dueIso = parseBrDate(dueDate, { allowFuture: true });
+  // O mês de referência é o mês do vencimento: "2026-09".
+  const referenceMonth = dueIso ? dueIso.slice(0, 7) : '';
+
+  function closeCreate() {
     setShowCreate(false);
     setDueDate('');
-    setReferenceMonth('');
+    setRecurring(true);
+    setFeeError('');
+  }
+
+  async function handleCreate() {
+    setFeeError('');
+    const value = Number(amount.replace(',', '.'));
+    if (!value || value <= 0) {
+      setFeeError('Informe um valor válido.');
+      return;
+    }
+    if (!dueIso) {
+      setFeeError('Informe um vencimento válido (DD/MM/AAAA).');
+      return;
+    }
+    try {
+      await createFee.mutateAsync({ amount: value, dueDate: dueIso, referenceMonth, recurring });
+      closeCreate();
+    } catch (err) {
+      setFeeError(err instanceof Error ? err.message : 'Não foi possível criar a mensalidade.');
+    }
   }
 
   return (
@@ -169,10 +192,34 @@ function FinanceTab({ studentId, studentName }: { studentId: string; studentName
         showCreate ? (
           <Card style={styles.formCard}>
             <TextField label="Valor (R$)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
-            <TextField label="Vencimento (AAAA-MM-DD)" value={dueDate} onChangeText={setDueDate} placeholder="2026-08-10" />
-            <TextField label="Referência (AAAA-MM)" value={referenceMonth} onChangeText={setReferenceMonth} placeholder="2026-08" />
+            <TextField
+              label="Vencimento"
+              value={dueDate}
+              onChangeText={(v) => setDueDate(maskDate(v))}
+              placeholder="DD/MM/AAAA"
+              keyboardType="number-pad"
+              maxLength={10}
+            />
+            <View style={styles.switchRow}>
+              <View style={styles.flex1}>
+                <Text style={styles.switchLabel}>Repetir todo mês</Text>
+                <Text style={styles.switchHint}>
+                  {recurring
+                    ? 'A próxima mensalidade é criada sozinha, 10 dias antes de vencer.'
+                    : 'Só esta mensalidade será criada.'}
+                </Text>
+              </View>
+              <Switch
+                value={recurring}
+                onValueChange={setRecurring}
+                trackColor={{ true: colors.primary, false: colors.border }}
+                thumbColor={colors.white}
+                {...({ activeThumbColor: colors.white } as object)}
+              />
+            </View>
+            {feeError ? <Text style={styles.error}>{feeError}</Text> : null}
             <View style={styles.formActions}>
-              <Button label="Cancelar" variant="secondary" onPress={() => setShowCreate(false)} style={styles.flex1} />
+              <Button label="Cancelar" variant="secondary" onPress={closeCreate} style={styles.flex1} />
               <Button label="Criar" onPress={handleCreate} loading={createFee.isPending} style={styles.flex1} />
             </View>
           </Card>
@@ -477,6 +524,21 @@ const styles = StyleSheet.create({
   },
   flex1: {
     flex: 1,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  switchLabel: {
+    color: colors.text,
+    fontSize: fontSize.md,
+    fontWeight: '600',
+  },
+  switchHint: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
   error: {
     color: colors.danger,

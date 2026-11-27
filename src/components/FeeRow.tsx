@@ -30,7 +30,7 @@ export function FeeRow({ fee, studentName, onPress }: FeeRowProps) {
       onPress={onPress}
       showChevron={!!onPress}
       title={studentName ?? fee.referenceMonth}
-      subtitle={`Vencimento ${formatDate(fee.dueDate)}${studentName ? ` · ${fee.referenceMonth}` : ''}`}
+      subtitle={`Vencimento ${formatDate(fee.dueDate)}${studentName ? ` · ${fee.referenceMonth}` : ''}${fee.recurring ? ' · Mensal' : ''}`}
       trailing={
         <View style={styles.trailing}>
           <Text style={styles.amount}>{formatCurrency(fee.amount)}</Text>

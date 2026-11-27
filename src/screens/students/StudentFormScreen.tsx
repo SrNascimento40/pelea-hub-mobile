@@ -20,7 +20,7 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
   const [fullName, setFullName] = useState(student?.fullName ?? '');
   const [email, setEmail] = useState(student?.email ?? '');
   const [phone, setPhone] = useState(maskPhone(student?.phone ?? ''));
-  const [birthDate, setBirthDate] = useState(student ? isoToBrDate(student.birthDate) : '');
+  const [birthDate, setBirthDate] = useState(student?.birthDate ? isoToBrDate(student.birthDate) : '');
   const [password, setPassword] = useState('');
   const [address, setAddress] = useState(student?.address ?? '');
   const [observations, setObservations] = useState(student?.observations ?? '');
@@ -32,12 +32,12 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
 
   async function handleSubmit() {
     setFormError('');
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !birthDate.trim()) {
-      setFormError('Preencha nome, email, telefone e data de nascimento.');
+    if (!fullName.trim() || !email.trim() || !phone.trim()) {
+      setFormError('Preencha nome, email e telefone.');
       return;
     }
-    const birthIso = parseBrDate(birthDate);
-    if (!birthIso) {
+    const birthIso = birthDate ? parseBrDate(birthDate) : null;
+    if (birthDate && !birthIso) {
       setFormError('Data de nascimento inválida. Confira dia, mês e ano.');
       return;
     }
@@ -89,7 +89,7 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
         />
         <TextField label="Telefone" value={phone} onChangeText={(v) => setPhone(maskPhone(v))} placeholder="(11) 99999-9999" keyboardType="phone-pad" />
         <TextField
-          label="Data de nascimento"
+          label="Data de nascimento (opcional)"
           value={birthDate}
           onChangeText={(v) => setBirthDate(maskDate(v))}
           placeholder="DD/MM/AAAA"
