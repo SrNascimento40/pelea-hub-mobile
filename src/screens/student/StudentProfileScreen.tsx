@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '@/components/ui/Avatar';
+import { maskPhone } from '@/utils/masks';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LoadingView } from '@/components/ui/LoadingView';
@@ -84,14 +85,14 @@ export function StudentProfileScreen() {
           <Text style={styles.phoneLabel}>Telefone</Text>
           {editingPhone ? (
             <View style={styles.phoneEdit}>
-              <TextField label="" value={phone} onChangeText={setPhone} placeholder={student.phone} keyboardType="phone-pad" />
+              <TextField label="" value={phone} onChangeText={(v) => setPhone(maskPhone(v))} placeholder="(11) 99999-9999" keyboardType="phone-pad" />
               <Button label="Salvar" size="sm" onPress={handleSavePhone} loading={updateStudent.isPending} />
             </View>
           ) : (
             <Pressable
               style={styles.phoneValueRow}
               onPress={() => {
-                setPhone(student.phone);
+                setPhone(maskPhone(student.phone));
                 setEditingPhone(true);
               }}
             >

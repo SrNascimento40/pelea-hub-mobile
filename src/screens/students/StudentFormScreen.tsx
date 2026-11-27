@@ -7,26 +7,7 @@ import { TextField } from '@/components/ui/TextField';
 import { colors, fontSize, spacing } from '@/constants/theme';
 import { useCreateStudent, useUpdateStudent } from '@/hooks/useStudents';
 import { Student } from '@/types';
-
-// Aceita DD/MM/AAAA (como o usuário digita) e AAAA-MM-DD; devolve ISO em meia-noite UTC
-// para o dia não "voltar" um por causa de fuso. Retorna null se a data não existir.
-function parseBirthDate(text: string): string | null {
-  const value = text.trim();
-  const br = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  const parts = br ? [br[3], br[2], br[1]] : iso ? [iso[1], iso[2], iso[3]] : null;
-  if (!parts) return null;
-  const [year, month, day] = parts.map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  const isRealDate = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-  if (!isRealDate || date.getTime() > Date.now()) return null;
-  return date.toISOString();
-}
-
-function toBrDate(isoDate: string): string {
-  const [year, month, day] = isoDate.slice(0, 10).split('-');
-  return `${day}/${month}/${year}`;
-}
+import { isoToBrDate, maskDate, maskPhone, parseBrDate } from '@/utils/masks';
 
 interface StudentFormScreenProps {
   mode: 'create' | 'edit';
@@ -38,8 +19,8 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
   const router = useRouter();
   const [fullName, setFullName] = useState(student?.fullName ?? '');
   const [email, setEmail] = useState(student?.email ?? '');
-  const [phone, setPhone] = useState(student?.phone ?? '');
-  const [birthDate, setBirthDate] = useState(student ? toBrDate(student.birthDate) : '');
+  const [phone, setPhone] = useState(maskPhone(student?.phone ?? ''));
+  const [birthDate, setBirthDate] = useState(student ? isoToBrDate(student.birthDate) : '');
   const [password, setPassword] = useState('');
   const [address, setAddress] = useState(student?.address ?? '');
   const [observations, setObservations] = useState(student?.observations ?? '');
@@ -55,9 +36,9 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
       setFormError('Preencha nome, email, telefone e data de nascimento.');
       return;
     }
-    const birthIso = parseBirthDate(birthDate);
+    const birthIso = parseBrDate(birthDate);
     if (!birthIso) {
-      setFormError('Data de nascimento inválida. Use o formato DD/MM/AAAA.');
+      setFormError('Data de nascimento inválida. Confira dia, mês e ano.');
       return;
     }
     if (mode === 'create' && password.length < 8) {
@@ -106,13 +87,14 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <TextField label="Telefone" value={phone} onChangeText={setPhone} placeholder="(11) 99999-9999" keyboardType="phone-pad" />
+        <TextField label="Telefone" value={phone} onChangeText={(v) => setPhone(maskPhone(v))} placeholder="(11) 99999-9999" keyboardType="phone-pad" />
         <TextField
           label="Data de nascimento"
           value={birthDate}
-          onChangeText={setBirthDate}
+          onChangeText={(v) => setBirthDate(maskDate(v))}
           placeholder="DD/MM/AAAA"
-          keyboardType="numbers-and-punctuation"
+          keyboardType="number-pad"
+          maxLength={10}
         />
         {mode === 'create' ? (
           <TextField

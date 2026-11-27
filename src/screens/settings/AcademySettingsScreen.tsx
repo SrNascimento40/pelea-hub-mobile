@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
+import { maskPhone } from '@/utils/masks';
 import { Card } from '@/components/ui/Card';
 import { ListRow } from '@/components/ui/ListRow';
 import { LoadingView } from '@/components/ui/LoadingView';
@@ -27,7 +28,7 @@ export function AcademySettingsScreen() {
     if (academy) {
       setName(academy.name);
       setAddress(academy.address);
-      setPhone(academy.phone);
+      setPhone(maskPhone(academy.phone));
     }
   }, [academy]);
 
@@ -61,7 +62,7 @@ export function AcademySettingsScreen() {
       <View style={styles.form}>
         <TextField label="Nome" value={name} onChangeText={setName} />
         <TextField label="Endereço" value={address} onChangeText={setAddress} />
-        <TextField label="Telefone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <TextField label="Telefone" value={phone} onChangeText={(v) => setPhone(maskPhone(v))} placeholder="(11) 3333-4444" keyboardType="phone-pad" />
         <Button label={saved ? 'Salvo!' : 'Salvar alterações'} onPress={handleSave} loading={updateAcademy.isPending} fullWidth />
       </View>
 

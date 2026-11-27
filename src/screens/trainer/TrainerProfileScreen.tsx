@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
+import { maskPhone } from '@/utils/masks';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LoadingView } from '@/components/ui/LoadingView';
@@ -20,7 +21,7 @@ export function TrainerProfileScreen() {
   const changePassword = useChangePassword();
 
   const [fullName, setFullName] = useState(user?.fullName ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
+  const [phone, setPhone] = useState(maskPhone(user?.phone ?? ''));
   const [profileSaved, setProfileSaved] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -32,7 +33,7 @@ export function TrainerProfileScreen() {
   useEffect(() => {
     if (user) {
       setFullName(user.fullName);
-      setPhone(user.phone);
+      setPhone(maskPhone(user.phone));
     }
   }, [user?.id]);
 
@@ -44,7 +45,7 @@ export function TrainerProfileScreen() {
     );
   }
 
-  const profileChanged = fullName.trim() !== user.fullName || phone.trim() !== user.phone;
+  const profileChanged = fullName.trim() !== user.fullName || phone !== maskPhone(user.phone);
 
   async function handleSaveProfile() {
     if (!fullName.trim()) return;
@@ -111,7 +112,7 @@ export function TrainerProfileScreen() {
           label="Telefone"
           value={phone}
           onChangeText={(v) => {
-            setPhone(v);
+            setPhone(maskPhone(v));
             setProfileSaved(false);
           }}
           keyboardType="phone-pad"
