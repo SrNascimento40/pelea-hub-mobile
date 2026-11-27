@@ -22,6 +22,7 @@ export interface CreateTrainerInput {
   fullName: string;
   email: string;
   phone: string;
+  password: string;
 }
 
 export async function addTrainer(_actingUser: User, input: CreateTrainerInput): Promise<User> {

@@ -8,6 +8,26 @@ import { colors, fontSize, spacing } from '@/constants/theme';
 import { useCreateStudent, useUpdateStudent } from '@/hooks/useStudents';
 import { Student } from '@/types';
 
+// Aceita DD/MM/AAAA (como o usuário digita) e AAAA-MM-DD; devolve ISO em meia-noite UTC
+// para o dia não "voltar" um por causa de fuso. Retorna null se a data não existir.
+function parseBirthDate(text: string): string | null {
+  const value = text.trim();
+  const br = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  const parts = br ? [br[3], br[2], br[1]] : iso ? [iso[1], iso[2], iso[3]] : null;
+  if (!parts) return null;
+  const [year, month, day] = parts.map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const isRealDate = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  if (!isRealDate || date.getTime() > Date.now()) return null;
+  return date.toISOString();
+}
+
+function toBrDate(isoDate: string): string {
+  const [year, month, day] = isoDate.slice(0, 10).split('-');
+  return `${day}/${month}/${year}`;
+}
+
 interface StudentFormScreenProps {
   mode: 'create' | 'edit';
   basePath: string;
@@ -19,7 +39,8 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
   const [fullName, setFullName] = useState(student?.fullName ?? '');
   const [email, setEmail] = useState(student?.email ?? '');
   const [phone, setPhone] = useState(student?.phone ?? '');
-  const [birthDate, setBirthDate] = useState(student ? student.birthDate.slice(0, 10) : '');
+  const [birthDate, setBirthDate] = useState(student ? toBrDate(student.birthDate) : '');
+  const [password, setPassword] = useState('');
   const [address, setAddress] = useState(student?.address ?? '');
   const [observations, setObservations] = useState(student?.observations ?? '');
   const [formError, setFormError] = useState('');
@@ -34,9 +55,13 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
       setFormError('Preencha nome, email, telefone e data de nascimento.');
       return;
     }
-    const birthIso = new Date(birthDate).toISOString();
-    if (Number.isNaN(new Date(birthDate).getTime())) {
-      setFormError('Data de nascimento inválida. Use o formato AAAA-MM-DD.');
+    const birthIso = parseBirthDate(birthDate);
+    if (!birthIso) {
+      setFormError('Data de nascimento inválida. Use o formato DD/MM/AAAA.');
+      return;
+    }
+    if (mode === 'create' && password.length < 8) {
+      setFormError('A senha de acesso do aluno precisa ter ao menos 8 caracteres.');
       return;
     }
 
@@ -49,6 +74,7 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
           birthDate: birthIso,
           address: address.trim(),
           observations: observations.trim(),
+          password,
         });
         router.replace({ pathname: `${basePath}/students/[id]`, params: { id: created.id } });
       } else if (student) {
@@ -85,8 +111,19 @@ export function StudentFormScreen({ mode, basePath, student }: StudentFormScreen
           label="Data de nascimento"
           value={birthDate}
           onChangeText={setBirthDate}
-          placeholder="AAAA-MM-DD"
+          placeholder="DD/MM/AAAA"
+          keyboardType="numbers-and-punctuation"
         />
+        {mode === 'create' ? (
+          <TextField
+            label="Senha de acesso do aluno"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Mínimo 8 caracteres — repasse ao aluno"
+            autoCapitalize="none"
+            secureTextEntry
+          />
+        ) : null}
         <TextField label="Endereço" value={address} onChangeText={setAddress} placeholder="Endereço completo" />
         <TextField
           label="Observações"

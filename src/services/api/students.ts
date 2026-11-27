@@ -28,6 +28,7 @@ export interface CreateStudentInput {
   birthDate: string;
   address: string;
   observations: string;
+  password: string;
 }
 
 export async function createStudent(_actingUser: User, input: CreateStudentInput): Promise<Student> {
