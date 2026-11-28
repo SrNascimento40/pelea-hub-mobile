@@ -12,7 +12,8 @@ import { TextField } from '@/components/ui/TextField';
 import { TopBar } from '@/components/TopBar';
 import { colors, fontSize, spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
-import { usePhysicalProfiles, useTechnicalProfiles } from '@/hooks/useProfiles';
+import { usePhysicalProfiles, useProgressCheckins, useTechnicalProfiles } from '@/hooks/useProfiles';
+import { ProgressCheckinCard } from '@/components/FighterProgress';
 import { useMyStudentProfile, useUpdateStudent, useUploadStudentPhoto } from '@/hooks/useStudents';
 import { formatDate } from '@/utils/format';
 
@@ -21,6 +22,7 @@ export function StudentProfileScreen() {
   const { data: student, isLoading } = useMyStudentProfile();
   const { data: physical } = usePhysicalProfiles(student?.id);
   const { data: technical } = useTechnicalProfiles(student?.id);
+  const { data: progress } = useProgressCheckins(student?.id);
   const updateStudent = useUpdateStudent(student?.id ?? '');
   const uploadPhoto = useUploadStudentPhoto(student?.id ?? '');
 
@@ -131,6 +133,15 @@ export function StudentProfileScreen() {
           )}
         </View>
       </Card>
+
+      <Text style={styles.sectionLabel}>Minha evolução</Text>
+      {progress?.[0] ? (
+        <ProgressCheckinCard checkin={progress[0]} previous={progress[1]} />
+      ) : (
+        <Card>
+          <Text style={styles.metricMeta}>Sem avaliações registradas ainda</Text>
+        </Card>
+      )}
 
       <Text style={styles.sectionLabel}>Perfil físico</Text>
       <Card>

@@ -38,3 +38,30 @@ export function useCreateTechnicalProfile(studentId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['technical', studentId] }),
   });
 }
+
+export function useProgressCheckins(studentId: string | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['progress', studentId],
+    queryFn: () => profilesApi.listProgressCheckins(user!, studentId!),
+    enabled: !!user && !!studentId,
+  });
+}
+
+export function useCreateProgressCheckin(studentId: string) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: profilesApi.ProgressCheckinInput) => profilesApi.createProgressCheckin(user!, studentId, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['progress', studentId] }),
+  });
+}
+
+export function useDeleteProgressCheckin(studentId: string) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (checkinId: string) => profilesApi.deleteProgressCheckin(user!, studentId, checkinId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['progress', studentId] }),
+  });
+}

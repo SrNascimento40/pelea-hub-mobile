@@ -119,6 +119,35 @@ export interface PhysicalProfile {
   evaluatedByName: string;
 }
 
+/** Notas de 1 a 5 do Fighter Progress & Stats; null = não avaliado nesta data. */
+export type ProgressScoreKey =
+  | 'stanceGuard'
+  | 'footwork'
+  | 'jab'
+  | 'crossPunch'
+  | 'hook'
+  | 'uppercut'
+  | 'defense'
+  | 'strength'
+  | 'speed'
+  | 'endurance';
+
+export type ProgressScores = Record<ProgressScoreKey, number | null>;
+
+export interface ProgressCheckin extends ProgressScores {
+  id: string;
+  studentId: string;
+  academyId: string;
+  checkinDate: string;
+  frequency: string;
+  developmentFocus: string;
+  strengths: string;
+  weaknesses: string;
+  createdAt: string;
+  createdBy: string;
+  createdByName: string;
+}
+
 export interface TechProfile {
   id: string;
   studentId: string;

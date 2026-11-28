@@ -15,11 +15,19 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
 import { FeeActionModal } from '@/components/FeeActionModal';
 import { FeeRow } from '@/components/FeeRow';
+import { averageScore, ProgressCheckinCard, ProgressCheckinForm } from '@/components/FighterProgress';
 import { colors, fontSize, spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useCheckin, useStudentAttendance } from '@/hooks/useAttendance';
 import { useCreateFee, useStudentFees } from '@/hooks/useFinance';
-import { useCreatePhysicalProfile, useCreateTechnicalProfile, usePhysicalProfiles, useTechnicalProfiles } from '@/hooks/useProfiles';
+import {
+  useCreatePhysicalProfile,
+  useCreateTechnicalProfile,
+  useDeleteProgressCheckin,
+  usePhysicalProfiles,
+  useProgressCheckins,
+  useTechnicalProfiles,
+} from '@/hooks/useProfiles';
 import { useAdjustRankingPoints, useStudentRanking } from '@/hooks/useRanking';
 import { useSetStudentStatus, useStudent } from '@/hooks/useStudents';
 import { MonthlyFee } from '@/types';
@@ -27,10 +35,11 @@ import { age, formatDate, formatDateTime } from '@/utils/format';
 import { maskDate, parseBrDate } from '@/utils/masks';
 import { permissions } from '@/utils/permissions';
 
-type TabKey = 'info' | 'finance' | 'attendance' | 'ranking' | 'profile';
+type TabKey = 'info' | 'progress' | 'finance' | 'attendance' | 'ranking' | 'profile';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'info', label: 'Info' },
+  { key: 'progress', label: 'Progresso' },
   { key: 'finance', label: 'Financeiro' },
   { key: 'attendance', label: 'Presença' },
   { key: 'ranking', label: 'Ranking' },
@@ -69,6 +78,7 @@ export function StudentDetailScreen({ studentId, basePath }: { studentId: string
       <SegmentedControl options={TABS} value={tab} onChange={setTab} />
 
       {tab === 'info' ? <InfoTab studentId={studentId} /> : null}
+      {tab === 'progress' ? <ProgressTab studentId={studentId} /> : null}
       {tab === 'finance' ? <FinanceTab studentId={studentId} studentName={student.fullName} /> : null}
       {tab === 'attendance' ? <AttendanceTab studentId={studentId} isActive={student.status === 'active'} /> : null}
       {tab === 'ranking' ? <RankingTab studentId={studentId} /> : null}
@@ -334,6 +344,87 @@ function RankingTab({ studentId }: { studentId: string }) {
   );
 }
 
+function ProgressTab({ studentId }: { studentId: string }) {
+  const { user } = useAuth();
+  const { data: checkins, isLoading, isError, refetch } = useProgressCheckins(studentId);
+  const deleteCheckin = useDeleteProgressCheckin(studentId);
+  const [showForm, setShowForm] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<string | null>(null);
+
+  if (!user) return null;
+  if (isLoading) return <LoadingView />;
+  if (isError || !checkins) return <ErrorState onRetry={refetch} />;
+  const canRegister = permissions.registerProfile(user.role);
+  const [latest, previous] = checkins;
+
+  return (
+    <View style={styles.tabContent}>
+      {canRegister ? (
+        showForm ? (
+          <ProgressCheckinForm studentId={studentId} onClose={() => setShowForm(false)} />
+        ) : (
+          <Button label="Registrar nova avaliação" onPress={() => setShowForm(true)} fullWidth />
+        )
+      ) : null}
+
+      {latest ? (
+        <ProgressCheckinCard checkin={latest} previous={previous} />
+      ) : (
+        <EmptyState icon="trending-up-outline" title="Nenhuma avaliação ainda" description="Registre avaliações periódicas com as mesmas notas para acompanhar a evolução do atleta." />
+      )}
+
+      {checkins.length > 1 ? (
+        <>
+          <Text style={styles.sectionLabel}>Histórico</Text>
+          {checkins.slice(1).map((checkin, i) => {
+            const expanded = expandedId === checkin.id;
+            const avg = averageScore(checkin);
+            return (
+              <View key={checkin.id} style={styles.historyItem}>
+                <Pressable onPress={() => setExpandedId(expanded ? null : checkin.id)}>
+                  <Card style={styles.historyRow}>
+                    <View style={styles.flex1}>
+                      <Text style={styles.infoValue}>{formatDate(checkin.checkinDate)}</Text>
+                      <Text style={styles.infoLabel}>
+                        {avg != null ? `Média ${avg.toFixed(1)}` : 'Sem notas'} · por {checkin.createdByName}
+                      </Text>
+                    </View>
+                    <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+                  </Card>
+                </Pressable>
+                {expanded ? <ProgressCheckinCard checkin={checkin} previous={checkins[i + 2]} /> : null}
+                {expanded && canRegister ? (
+                  <Button label="Excluir esta avaliação" variant="secondary" onPress={() => setToDelete(checkin.id)} />
+                ) : null}
+              </View>
+            );
+          })}
+        </>
+      ) : null}
+
+      {latest && canRegister ? (
+        <Button label="Excluir avaliação mais recente" variant="secondary" onPress={() => setToDelete(latest.id)} />
+      ) : null}
+
+      <ConfirmDialog
+        visible={toDelete !== null}
+        title="Excluir avaliação?"
+        description="A avaliação será removida do histórico do aluno. Isso não pode ser desfeito."
+        confirmLabel="Excluir"
+        destructive
+        loading={deleteCheckin.isPending}
+        onConfirm={async () => {
+          if (toDelete) await deleteCheckin.mutateAsync(toDelete);
+          setToDelete(null);
+          setExpandedId(null);
+        }}
+        onCancel={() => setToDelete(null)}
+      />
+    </View>
+  );
+}
+
 function ProfileTab({ studentId }: { studentId: string }) {
   const { user } = useAuth();
   const { data: physical } = usePhysicalProfiles(studentId);
@@ -524,6 +615,14 @@ const styles = StyleSheet.create({
   },
   flex1: {
     flex: 1,
+  },
+  historyItem: {
+    gap: spacing.sm,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   switchRow: {
     flexDirection: 'row',
